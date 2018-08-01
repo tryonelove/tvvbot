@@ -21,7 +21,7 @@ skillLabels = ["Stamina",
                 ]
 
 
-
+osuservers = ('bancho', 'gatari', 'ripple')
 
 def readableMods(m):
         r = ""
@@ -217,14 +217,15 @@ class Osu():
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True)
-    async def top(self, ctx, server: str = None, *, nick:str = None):
-        if server != 'bancho' and server != 'ripple' and server != 'gatari':
-            if nick is None:
+    async def top(self, ctx, server: str = None, *, nick: str = None):
+        if server not in osuservers:
+            nick = ' '.join(ctx.message.content.split()[1:])
+            if nick == '':
                 nick = ctx.message.author.name
-            else:
-                nick = ' '.join(ctx.message.content.split()[1:])
             server = 'bancho'
-        if nick is None:
+        elif server in osuservers:
+            nick = ' '.join(ctx.message.content.split()[2:])
+            if nick == '':
                 nick = ctx.message.author.name
         server = server.lower()
         bm = None
@@ -366,12 +367,19 @@ class Osu():
 
     @commands.command(pass_context=True)
     #http://osu.gatari.pw/api/v1/pp b= c= a= m= x(misses)=
-    async def last(self, ctx, server,limit: str = '1', *, nick: str = None):
-        if nick is None:
-            nick = ctx.message.author.name
+    async def last(self, ctx, limit: str = None, *, nick: str = None):
+        if limit is None:
+            limit = '1'
         if limit.isdigit()==False:
             nick = ' '.join(ctx.message.content.split()[1:])
+            if nick == '':
+                nick = ctx.message.author.name
             limit = '1'
+        elif limit.isdigit():
+            nick = ' '.join(ctx.message.content.split()[2:])
+            if nick == '':
+                nick = ctx.message.author.name
+        print(limit)
         await self.bot.send_typing(ctx.message.channel)
         async with aiohttp.ClientSession() as session:
                 async with session.get('https://osu.ppy.sh/api/get_user_recent', params={'k': config.osu_api_key, 'u': nick, 'limit': limit}) as r:
