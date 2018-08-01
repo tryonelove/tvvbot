@@ -8,6 +8,7 @@ import mods
 from bs4 import BeautifulSoup
 import datetime
 
+
 sig_colors =['black', 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'hex2255ee']
 
 skillLabels = ["Stamina",
@@ -18,6 +19,8 @@ skillLabels = ["Stamina",
                     "Reaction", 
                     "Memory"
                 ]
+
+
 
 
 def readableMods(m):
@@ -86,7 +89,7 @@ def star_rating(stars):
 
 class Osu():
     def __init__(self, bot):
-        self.bot = bot   
+        self.bot = bot    
 
     @commands.command(pass_context=True)
     async def gatari(self,ctx, *, profile):
@@ -141,9 +144,10 @@ class Osu():
         await self.bot.send_typing(ctx.message.channel)
         em = discord.Embed(description='')
         em.set_author(name='{} profile'.format(name), url='https://osu.ppy.sh/u/{}'.format(name.replace(' ', '%20')))
-        em.set_image(url='https://lemmmy.pw/osusig/sig.php?colour={}&uname={}&xpbar&xpbarhex&darktriangles&pp=2'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&pp=2&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
         em.set_footer(text='Image provided by https://lemmmy.pw/osusig', icon_url='https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png')
         await self.bot.say(embed=em)
+    
 
     @commands.command(pass_context=True)
     async def taiko(self,ctx, *, name: str = None):
@@ -152,7 +156,7 @@ class Osu():
         await self.bot.send_typing(ctx.message.channel)
         em = discord.Embed(description='')
         em.set_author(name='{} profile'.format(name), url='https://osu.ppy.sh/u/{}'.format(name.replace(' ', '%20')))
-        em.set_image(url='https://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=1&xpbar&xpbarhex&darktriangles'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=1&pp=2&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
         em.set_footer(text='Image provided by https://lemmmy.pw/osusig',
                       icon_url='https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png')
         await self.bot.say(embed=em)
@@ -164,7 +168,7 @@ class Osu():
         await self.bot.send_typing(ctx.message.channel)
         em = discord.Embed(description='')
         em.set_author(name='{} profile'.format(name), url='https://osu.ppy.sh/u/{}'.format(name.replace(' ', '%20')))
-        em.set_image(url='https://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=3&xpbar&xpbarhex&darktriangles'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=3&pp=2&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
         em.set_footer(text='Image provided by https://lemmmy.pw/osusig', icon_url='https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png')
         await self.bot.say(embed=em)
 
@@ -175,7 +179,7 @@ class Osu():
         await self.bot.send_typing(ctx.message.channel)
         em = discord.Embed(description='')
         em.set_author(name='{} profile'.format(name), url='https://osu.ppy.sh/u/{}'.format(name.replace(' ', '%20')))
-        em.set_image(url='https://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=2&xpbar&xpbarhex&darktriangles'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=2&pp=2&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
         em.set_footer(text='Image provided by https://lemmmy.pw/osusig', icon_url='https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png')
         await self.bot.say(embed=em)
 
@@ -211,16 +215,18 @@ class Osu():
         em.set_thumbnail(url=avatar)
         em.set_footer(text='osu!chan',icon_url='https://syrin.me/static/img/oc_logo_light_bold-100.png')
         await self.bot.say(embed=em)
+
     @commands.command(pass_context=True)
     async def top(self, ctx, server: str = None, *, nick:str = None):
-        if nick is None:
-            nick = ctx.message.author.name
-        server = server.lower()
         if server != 'bancho' and server != 'ripple' and server != 'gatari':
-            nick = ' '.join(ctx.message.content.split()[1:])
+            if nick is None:
+                nick = ctx.message.author.name
+            else:
+                nick = ' '.join(ctx.message.content.split()[1:])
             server = 'bancho'
-        print(server)
-        print(nick)
+        if nick is None:
+                nick = ctx.message.author.name
+        server = server.lower()
         bm = None
         score = None
         pp = None
@@ -360,7 +366,7 @@ class Osu():
 
     @commands.command(pass_context=True)
     #http://osu.gatari.pw/api/v1/pp b= c= a= m= x(misses)=
-    async def last(self, ctx, limit: str = '1', *, nick: str = None):
+    async def last(self, ctx, server,limit: str = '1', *, nick: str = None):
         if nick is None:
             nick = ctx.message.author.name
         if limit.isdigit()==False:

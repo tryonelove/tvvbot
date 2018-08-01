@@ -74,7 +74,7 @@ async def load_asian(ctx):
 async def on_message(message):
     if message.content.startswith('!8ball'):
         await bot.send_message(message.channel, random.choice(config.choice))
-    s = re.search(r'https?:\/\/(osu|new)\.(?:gatari|ppy).(?:pw|sh)/([bs]|beatmapsets)/(\d+)(#(\w+)/(\d+))?', message.content)
+    s = re.search(r'https?:\/\/(osu|new)\.(?:gatari|ppy).(?:pw|sh)/([bs]|beatmapsets)/(\d+)(/#(\w+)/(\d+))?', message.content)
     modsEnum = 0
     mods_str = ''
     if s:
@@ -116,12 +116,12 @@ async def on_message(message):
                                 elif i == "AP":
                                     modsEnum += mods.RELAX2	
                                     mods_str += i
-        if '/b/' or '/beatmapsets/' in str(s.group(0)):
+        if '/b/' in str(s.group(0)) or '/beatmapsets/' in str(s.group(0)):
                     b = str(s.group(0))
                     if '/b/' in b:
                         b_mapa = b.find('/b/')
                         b_mapa = b[b_mapa+3:]
-                    elif 'beatmapsets' in b:
+                    elif '/beatmapsets/' in b:
                         b_mapa = b.rfind('/')
                         b_mapa = b[b_mapa +1:]
                     #http://osu.gatari.pw/api/v1/pp b= c= a= m= x(misses)=
@@ -130,6 +130,7 @@ async def on_message(message):
                             a = await r1.json()
                         async with session.get(osu_api+'/get_beatmaps', params = {'k': osu_api_key, 'b' : b_mapa}) as r:
                             js = await r.json()
+                            print(js)
                             em = discord.Embed(description=('**Mapper: **{}   **BPM: **{}\n**AR: **{}   **OD: **{}   **HP: **{}   **Stars:** {}{}'.format(js[0]['creator'],
                                                                                                                                                             js[0]['bpm'], 
                                                                                                                                                             js[0]['diff_approach'],
