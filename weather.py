@@ -5,10 +5,10 @@ import aiohttp
 
 weather_key = config.weather_key
 
-class weather():
+class Weather():
     def __init__(self, bot):
         self.bot = bot
-
+# aliases=['погода', 'weather']
     @commands.command(pass_context=True, aliases=['погода', 'weather'])
     async def _weather(self,ctx, *, city):
         emoji = ''
@@ -49,4 +49,4 @@ class weather():
                 await self.bot.say(embed=em)
 
 def setup(bot):
-    bot.add_cog(weather(bot))
+    bot.add_cog(Weather(bot))

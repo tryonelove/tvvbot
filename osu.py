@@ -88,112 +88,102 @@ def star_rating(stars):
         return '<:expert:428835677103456256>'
 
 class Osu():
+    """
+    osu! related commands.
+    """
     def __init__(self, bot):
         self.bot = bot    
 
     @commands.command(pass_context=True)
-    async def gatari(self,ctx, *, profile):
-        await self.bot.send_typing(ctx.message.channel)
-        link = (('https://osu.gatari.pw/api/v1/users/stats?u=' + profile).replace(' ', '%20'))
-        async with aiohttp.ClientSession() as session:
-            async with session.get(link) as r:
-                js = await r.json()
-                em = discord.Embed(description=('**PP: **{}' 
-                                                '\n**Accuracy: **{}'
-                                                '\n**Play count: **{}'
-                                                '\n**Rank: **#{}'.format(str(js['stats']['pp']), 
-                                                                         str(round(js['stats']['accuracy'], 2)),
-                                                                         str(js['stats']['playcount']), 
-                                                                         str(js['stats']['rank']))), colour=0x3297AC)
-                em.set_author(name=str("{} (clickable)".format(profile)).capitalize(),
-                              url='https://osu.gatari.pw/u/' + profile.replace(' ', '%20'), )
-                em.set_thumbnail(url="https://a.gatari.pw/" + str(js['stats']['id']))
-                em.set_footer(text='osu!Gatari', icon_url='https://b.catgirlsare.sexy/Ghtc.png')
-                await self.bot.say(embed=em)
-
-    @commands.command(pass_context=True)
-    async def ripple(self,ctx, *, profile):
-        await self.bot.send_typing(ctx.message.channel)
-        link = (('https://ripple.moe/api/v1/users/full?name=' + profile).replace(' ', '%20'))
-        async with aiohttp.ClientSession() as session:
-            async with session.get(link) as r:
-             if r.status == 200:
-                js = await r.json()
-                em = discord.Embed(description=('**PP: **{}'
-                                                '\n**Accuracy: **{}'
-                                                '\n**Play count: **{}'
-                                                '\n**Rank: **#{}'.format(str(js['std']['pp']),
-                                                                         str(round(js['std']['accuracy'], 2)),
-                                                                         str(js['std']['playcount']),
-                                                                         str(js['std']['global_leaderboard_rank'])
-                                                                         )
-                                                ), colour=0x3297AC)
-                em.set_author(name=str(profile + " (clickable)").capitalize(),
-                              url='https://ripple.moe/' + profile.replace(' ', '%20'), )
-                em.set_thumbnail(url="https://a.ripple.moe/" + str(js['id']))
-                em.set_footer(text='osu!ripple', icon_url='https://b.catgirlsare.sexy/E3YS.png')
-                await self.bot.say(embed=em)
-             elif r.status == 404:
-                 js = await r.json()
-                 await self.bot.say("```"+js['message']+"```")
-
-    @commands.command(pass_context=True)
     async def osu(self,ctx, *, name: str = None):
+        """Sends an osu!std picture for given username."""
         if name is None:
             name = ctx.message.author.name
         await self.bot.send_typing(ctx.message.channel)
         em = discord.Embed(description='')
         em.set_author(name='{} profile'.format(name), url='https://osu.ppy.sh/u/{}'.format(name.replace(' ', '%20')))
-        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&pp=2&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&pp=1&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
         em.set_footer(text='Image provided by https://lemmmy.pw/osusig', icon_url='https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png')
         await self.bot.say(embed=em)
     
+    @commands.command(pass_context=True)
+    async def gatari(self,ctx, *, name: str = None):
+        """Sends a gatari picture for given username."""
+        if name is None:
+            name = ctx.message.author.name
+        await self.bot.send_typing(ctx.message.channel)
+        em = discord.Embed(description='')
+        em.set_author(name='{} profile'.format(name), url='https://osu.gatari.pw/u/{}'.format(name.replace(' ', '%20')))
+        em.set_image(url='http://sig.gatari.pw/sig.php?colour={}&uname={}&pp=1&darktriangles'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_footer(text='Image provided by http://sig.gatari.pw/', icon_url='https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png')
+        await self.bot.say(embed=em)
+
+    @commands.command(pass_context=True)
+    async def ripple(self,ctx, *, name: str = None):
+        """Sends a ripple picture for given username."""
+        if name is None:
+            name = ctx.message.author.name
+        await self.bot.send_typing(ctx.message.channel)
+        em = discord.Embed(description='')
+        em.set_author(name='{} profile'.format(name), url='https://ripple.moe/u/{}'.format(name.replace(' ', '%20')))
+        em.set_image(url='http://sig.ripple.moe/sig.php?colour={}&uname={}&pp=1&darktriangles'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_footer(text='Image provided by http://sig.ripple.moe/', icon_url='https://b.catgirlsare.sexy/E3YS.png')
+        await self.bot.say(embed=em)    
 
     @commands.command(pass_context=True)
     async def taiko(self,ctx, *, name: str = None):
+        """Sends an osu!taiko picture for given username."""
         if name is None:
             name = ctx.message.author.name
         await self.bot.send_typing(ctx.message.channel)
         em = discord.Embed(description='')
         em.set_author(name='{} profile'.format(name), url='https://osu.ppy.sh/u/{}'.format(name.replace(' ', '%20')))
-        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=1&pp=2&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=1&pp=1&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
         em.set_footer(text='Image provided by https://lemmmy.pw/osusig',
                       icon_url='https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png')
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True)
     async def mania(self,ctx, *, name: str = None):
+        """Sends an osu!mania picture for given username."""
         if name is None:
             name = ctx.message.author.name
         await self.bot.send_typing(ctx.message.channel)
         em = discord.Embed(description='')
         em.set_author(name='{} profile'.format(name), url='https://osu.ppy.sh/u/{}'.format(name.replace(' ', '%20')))
-        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=3&pp=2&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=3&pp=1&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
         em.set_footer(text='Image provided by https://lemmmy.pw/osusig', icon_url='https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png')
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True)
     async def ctb(self,ctx, *, name:str = None):
+        """Sends an osu!ctb picture for given username."""
         if name is None:
             name = ctx.message.author.name
         await self.bot.send_typing(ctx.message.channel)
         em = discord.Embed(description='')
         em.set_author(name='{} profile'.format(name), url='https://osu.ppy.sh/u/{}'.format(name.replace(' ', '%20')))
-        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=2&pp=2&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
+        em.set_image(url='http://lemmmy.pw/osusig/sig.php?colour={}&uname={}&mode=2&pp=1&darktriangles&onlineindicator=undefined&xpbar&xpbarhex'.format(random.choice(sig_colors),name.replace(' ', '%20')))
         em.set_footer(text='Image provided by https://lemmmy.pw/osusig', icon_url='https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png')
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True)
     async def osuchan(self, ctx, *, name:str=None):
+        """Some stats from https://syrin.me/osuchan/"""
         if name is None:
             name = ctx.message.author.name
         await self.bot.send_typing(ctx.message.channel)
         async with aiohttp.ClientSession() as session:
             async with session.get('https://syrin.me/osuchan/u/{}/?m=0'.format(name.replace(' ','%20'))) as r:
                 osuchan = await r.text()
-        soup = BeautifulSoup(osuchan, 'html.parser')
-        tables = soup.find_all('td')
-        username = soup.h1.text
+            async with session.get('https://syrin.me/osuchan/u/{}/nochoke/?m=0&nec_unchoke=yes'.format(name.replace(' ','%20'))) as r:
+                nochoke = await r.text()
+        soup_main = BeautifulSoup(osuchan, 'html.parser')
+        soup_nochoke = BeautifulSoup(nochoke, 'html.parser')
+        nochoke_stats = soup_nochoke.find(id="results_panel").text
+        nc = nochoke_stats.splitlines()
+        tables = soup_main.find_all('td')
+        username = soup_main.h1.text
         level = tables[4].text[:-3]
         playcount = tables[6].text
         accuracy = tables[8].text
@@ -203,14 +193,15 @@ class Osu():
         best_bpm = tables[17].text
         best_ar = tables[19].text
         best_length = tables[21].text
-        avatar = soup.find('div', {'class':'col-md-4'}).img['src']
-        rank = soup.h3.text
-        country_rank = soup.find_all('h4')[2].text
-        flag = soup.find_all('h4')[2].img['title']
-        pp = soup.h5.text
+        avatar = soup_main.find('div', {'class':'col-md-4'}).img['src']
+        rank = soup_main.h3.text
+        country_rank = soup_main.find_all('h4')[2].text
+        flag = soup_main.find_all('h4')[2].img['title']
+        pp = soup_main.h5.text
         em = discord.Embed(description='', colour = 0x222C48)
-        em.add_field(name='**General Stats**', value = ':flag_{}:\n**PP:**{}\n**Level:** {}\n**Play Count:** {}\n**Accuracy:** {}\n\n**Fav. Mappers:** {}\n**(Unweighted) Fav. Mappers:** {}\n'.format(flag.lower(),pp,level, playcount, accuracy,fav_mappers,fav_mappers_pp))
+        em.add_field(name='**General Stats**', value = ':flag_{}:\n**PP:** {}\n**Level:** {}\n**Play Count:** {}\n**Accuracy:** {}\n\n**Fav. Mappers:** {}\n**(Unweighted) Fav. Mappers:** {}\n'.format(flag.lower(),pp,level, playcount, accuracy,fav_mappers,fav_mappers_pp))
         em.add_field(name='**Score Style**', value = '**Best mod:** {}\n**Best BPM:** {}     **Best AR:** {}     **Best Length:** {}'.format(best_mod, best_bpm, best_ar, best_length))
+        em.add_field(name='**No-choke stats**', value = '**{}** {}\n**{}** {}'.format(nc[1], nc[2], nc[3], nc[4]))
         em.set_author(name='{} {} ({} {})'.format(username, rank, country_rank, flag), url='https://syrin.me/osuchan/u/{}/?m=0'.format(name.replace(' ','%20')))
         em.set_thumbnail(url=avatar)
         em.set_footer(text='osu!chan',icon_url='https://syrin.me/static/img/oc_logo_light_bold-100.png')
@@ -218,6 +209,8 @@ class Osu():
 
     @commands.command(pass_context=True)
     async def top(self, ctx, server: str = None, *, nick: str = None):
+        """Top score of the given user. Supports bancho, ripple, gatari.
+            Example: !top gatari cookiezi, !top cookiezi"""
         if server not in osuservers:
             nick = ' '.join(ctx.message.content.split()[1:])
             if nick == '':
@@ -239,48 +232,48 @@ class Osu():
         rank = None
         await self.bot.send_typing(ctx.message.channel)
         if server == 'bancho':
-            async with aiohttp.ClientSession() as session:
-                async with session.get('https://osu.ppy.sh/api/get_user_best', params={'k': config.osu_api_key, 'u': nick, 'limit' : '1'}) as r:
-                 if r.status == 200:
-                    js = await r.json()
-                    bm = js[0]['beatmap_id']
-                    score = js[0]['score']
-                    pp = js[0]['pp']
-                    combo =  js[0]['maxcombo']
-                    count50 = js[0]['count50']
-                    count100 = js[0]['count100']
-                    count300 = js[0]['count300']
-                    misses = js[0]['countmiss']
-                    rank = js[0]['rank']
-                    m = js[0]['enabled_mods']
-                    user_id = js[0]['user_id']
-                async with session.get('https://osu.ppy.sh/api/get_user', params={'k': config.osu_api_key, 'u': nick}) as r:
-                    js1 = await r.json()
-                async with session.get('https://osu.ppy.sh/api/get_beatmaps', params={'k': config.osu_api_key, 'b' : bm}) as s:
-                 if s.status == 200:
-                    js2 = await s.json()
-                    title =  js2[0]['artist'] + ' - '+ js2[0]['title']+' ('+js2[0]['version']+')'
-                    em = discord.Embed(description=('[{}](https://osu.ppy.sh/b/{}){} **{}**\n  **Score:** {}   **Accuracy:**  {}\n  <:hit300:427941500035268608>{} <:hit100:427941500274475039>{}  <:hit50:427941499846787084>{}  <:hit0:427941499884535829>{}\n  **Combo:** {}/{}   **Rank:** {}   **PP:** {}'.format(
-                                                    title,
-                                                    bm,
-                                                    star_rating(float(js2[0]['difficultyrating'])), 
-                                                    readableMods(int(m)), 
-                                                    score, 
-                                                    acc_calc(int(misses),int(count50),int(count100),int(count300)), 
-                                                    count300, 
-                                                    count100, 
-                                                    count50, 
-                                                    misses, 
-                                                    combo,
-                                                    js2[0]['max_combo'], 
-                                                    rank_emoji(rank),
-                                                    pp)
-                                                    ), colour = 0xDA70D6
-                                        )
-                    em.set_author(name=("{} {}pp #{} ({}#{})".format(js1[0]['username'],js1[0]['pp_raw'],js1[0]['pp_rank'], js1[0]['country'],js1[0]['pp_country_rank'])), url='https://osu.ppy.sh/u/{}'.format(user_id), icon_url='https://a.ppy.sh/{}_1.png'.format(user_id))
-                    em.set_thumbnail(url='https://b.ppy.sh/thumb/{}.jpg'.format(js2[0]['beatmapset_id']))
-                    em.set_footer(text="osu!",icon_url="https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png")
-                    await self.bot.send_message(ctx.message.channel, embed=em)
+                async with aiohttp.ClientSession() as session:
+                    async with session.get('https://osu.ppy.sh/api/get_user_best', params={'k': config.osu_api_key, 'u': nick, 'limit' : '1'}) as r:
+                        if r.status == 200:
+                            js = await r.json()
+                            bm = js[0]['beatmap_id']
+                            score = js[0]['score']
+                            pp = js[0]['pp']
+                            combo =  js[0]['maxcombo']
+                            count50 = js[0]['count50']
+                            count100 = js[0]['count100']
+                            count300 = js[0]['count300']
+                            misses = js[0]['countmiss']
+                            rank = js[0]['rank']
+                            m = js[0]['enabled_mods']
+                            user_id = js[0]['user_id']
+                    async with session.get('https://osu.ppy.sh/api/get_user', params={'k': config.osu_api_key, 'u': nick}) as r:
+                        js1 = await r.json()
+                    async with session.get('https://osu.ppy.sh/api/get_beatmaps', params={'k': config.osu_api_key, 'b' : bm}) as s:
+                        if s.status == 200:
+                            js2 = await s.json()
+                            title =  js2[0]['artist'] + ' - '+ js2[0]['title']+' ('+js2[0]['version']+')'
+                            em = discord.Embed(description=('[{}](https://osu.ppy.sh/b/{}){} **{}**\n  **Score:** {}   **Accuracy:**  {}\n  <:hit300:427941500035268608>{} <:hit100:427941500274475039>{}  <:hit50:427941499846787084>{}  <:hit0:427941499884535829>{}\n  **Combo:** {}/{}   **Rank:** {}   **PP:** {}'.format(
+                                                            title,
+                                                            bm,
+                                                            star_rating(float(js2[0]['difficultyrating'])), 
+                                                            readableMods(int(m)), 
+                                                            score, 
+                                                            acc_calc(int(misses),int(count50),int(count100),int(count300)), 
+                                                            count300, 
+                                                            count100, 
+                                                            count50, 
+                                                            misses, 
+                                                            combo,
+                                                            js2[0]['max_combo'], 
+                                                            rank_emoji(rank),
+                                                            pp)
+                                                            ), colour = 0xDA70D6
+                                                )
+                            em.set_author(name=("{} {}pp #{} ({}#{})".format(js1[0]['username'],js1[0]['pp_raw'],js1[0]['pp_rank'], js1[0]['country'],js1[0]['pp_country_rank'])), url='https://osu.ppy.sh/u/{}'.format(user_id), icon_url='https://a.ppy.sh/{}_1.png'.format(user_id))
+                            em.set_thumbnail(url='https://b.ppy.sh/thumb/{}.jpg'.format(js2[0]['beatmapset_id']))
+                            em.set_footer(text="osu!",icon_url="https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png")
+                            await self.bot.send_message(ctx.message.channel, embed=em)
         elif server== 'gatari':
             async with aiohttp.ClientSession() as session:
                 async with session.get('https://osu.gatari.pw/api/v1/users/stats', params = {'u':nick}) as g:
@@ -368,6 +361,7 @@ class Osu():
     @commands.command(pass_context=True)
     #http://osu.gatari.pw/api/v1/pp b= c= a= m= x(misses)=
     async def last(self, ctx, limit: str = None, *, nick: str = None):
+        """Last score for the given user."""
         if limit is None:
             limit = '1'
         if limit.isdigit()==False:
@@ -430,6 +424,7 @@ class Osu():
                 await self.bot.send_message(ctx.message.channel, embed=em)
     @commands.command(pass_context= True)
     async def versus(self, ctx, player1, player2):
+        """http://osuskills.tk comparison for 2 given users."""
         await self.bot.send_typing(ctx.message.channel)
         skillValue1 = []
         skillValue2 = []
@@ -453,6 +448,8 @@ class Osu():
 
     @commands.command(pass_context=True)
     async def compare(self, ctx, *, player: str = None):
+        """Sends a score for the last map in chat.
+        Example: !compare cookiezi"""
         if player is None:
             player = ctx.message.author.name
         async for message in self.bot.logs_from(ctx.message.channel, limit=100):

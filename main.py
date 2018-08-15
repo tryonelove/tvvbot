@@ -12,7 +12,7 @@ import asyncio
 import mods
 from osu import star_rating
 
-startup_extensions = ["osu", "weather", "nsfw", "fun", 'img']
+startup_extensions = ["osu", "weather", "nsfw", "fun", 'voice']
 tuo = TwitterUserOrder('aceasianbot')
 tuo.set_count(100)
 
@@ -23,24 +23,16 @@ ts = TwitterSearch(
     access_token_secret=config.access_token_secret
 )
 
-help=''
-
-bot = commands.Bot(command_prefix='!', pm_help=help, owner_id='106833067708051456')
-
-with open('configuration.json', 'r+') as f:
-    configuration = json.load(f)
-
-bot.remove_command("help")
+bot = commands.Bot(command_prefix='!', pm_help = True, owner_id='106833067708051456')
 
 osu_api = 'https://osu.ppy.sh/api'
-
 osu_api_key=config.osu_api_key
-
 gatari_api = 'https://osu.gatari.pw/api/v1'
 
 weather_key = config.weather_key
 
-
+with open('configuration.json', 'r+') as f:
+    configuration = json.load(f)
 
 @bot.event
 async def on_ready():
@@ -58,7 +50,7 @@ async def on_command_error(error, ctx):
     if isinstance(error, discord.ext.commands.errors.CommandNotFound):
         pass
 
-@bot.command(pass_context = True)
+@bot.command(pass_context = True, hidden=True)
 @checks.is_owner()
 async def load_asian(ctx):
         count = 1
@@ -72,8 +64,6 @@ async def load_asian(ctx):
 
 @bot.event
 async def on_message(message):
-    if message.content.startswith('!8ball'):
-        await bot.send_message(message.channel, random.choice(config.choice))
     s = re.search(r'https?:\/\/(osu|new)\.(?:gatari|ppy).(?:pw|sh)/([bs]|beatmapsets)/(\d+)(/#(\w+)/(\d+))?', message.content)
     modsEnum = 0
     mods_str = ''
@@ -205,65 +195,33 @@ async def on_message(message):
         pass
     await bot.process_commands(message)
 
-
-
-@bot.command(pass_context=True)
-async def ping(ctx):
-    pingtime = time.time()
-    pingms = await bot.say("Pinging... `{}'s` location".format(ctx.message.author.mention))
-    ping = time.time() - pingtime
-    await bot.edit_message(pingms, "The ping time is `%.01f seconds`" % ping)
-
 @bot.command()
 async def invite():
     await bot.say('https://discordapp.com/oauth2/authorize?&client_id=247651906032369665&scope=bot&permissions=0')    
 
-@bot.group(pass_context=True)
+@bot.group(pass_context=True, hidden=True)
 async def set(ctx):
     if ctx.invoked_subcommand is None:
         await bot.say('Invalid command passed...')
 
-@set.command(pass_context=True)
+@set.command(pass_context=True, hidden=True)
 async def game(ctx, t, *, games:str):
         if games is None:
             await bot.say('No games to set.')
         game = discord.Game(type=int(t), name=games)
         await bot.change_presence(game=game)
 
-@bot.command(pass_context=True)
-async def help(ctx):
-    em = discord.Embed(description='Личное сообщение с командами было отправлено!', colour=0x3297AC)
-    await bot.send_message(ctx.message.author, "Привет, вот список моих команд(все они выполняются с префиксом !):"
-                                               "```"
-                                               "\ncat - присылает рандомного кота"
-                                               "\ndog - рандомная псина"
-                                               "\nping - пинг"
-                                               "\nroll - random number (0..1000)"
-                                               "\nlast <count> <username (optional), default value is discord username> - <count> last score for <username> player"
-                                               "\nosu <username(optional)> - osu!std profile stats"
-                                               "\nmania <username(optional)> - osu!mania profile stats"
-                                               "\nctb <username(optional)> - osu!ctb profile stats"
-                                               "\ntaiko <username(optional)> - osu!taiko profile stats"
-                                               "\ngatari <username - osu!gatari std stats>"
-                                               "\nripple <username - osu!gatari std stats>"
-                                               "\ntop <server (bancho/gatari/ripple)> <username(optional), defaults set to discord username> - user osu!std top score stats"
-                                               "\nversus <player1> <player2> - osu!Skills comparison"
-                                               "\ndefine <word/phrase/etc> - Urban Dictionary definition of the phrase"
-                                               "\nroll - рандомное чисто от 1 до 1000"
-                                               "\nboobs - грудь"
-                                               "\nbutt - жёппа"
-                                               "\nhello - Hello @message author"
-                                               "\nбурятка - присылает бурятку"
-                                               "\nпогода/weather <city> - показывает погоду в городе (если указана страна, то показывает погоду в столице)"
-                                               "\nclear <count> - удаляет count сообщений"
-                                               "\nкнб <камень\ножницы\бумага> - камень, ножницы, бумага"
-                                               "\navatar <@user> - показывает аватарку указанного пользователя"
-                                               "\nkiss/hug/punch/kill <@user>"
-                                               "```"
-                                               "\nСервер поддержки: https://discord.gg/jjzEJVD")
-
-    await bot.send_message(ctx.message.channel, embed=em)
-
+@checks.is_owner()
+@bot.command(pass_context=True, hidden = True)
+async def reload(ctx, *, cog_name: str):
+    """Reloads a cog
+    Example: reload audio"""
+    try:
+        bot.unload_extension(cog_name)
+        bot.load_extension(cog_name)
+        await bot.say('Cog `{}` has been reloaded.'.format(cog_name))
+    except:
+        await bot.say('exception')
 
 async def is_live_stream():
     online = []
@@ -288,7 +246,7 @@ async def is_live_stream():
                     except Exception as error:
                         print('Error: ',error)
                         print('JS: ', r)
-            await asyncio.sleep(2)
+            await asyncio.sleep(5)
 
 
 if __name__ == "__main__":
@@ -299,7 +257,7 @@ if __name__ == "__main__":
             exc = '{}: {}'.format(type(e).__name__, e)
             print('Failed to load extension {}\n{}'.format(extension, exc))
     bot.loop.create_task(is_live_stream())
-    bot.run(config.bot_token)
+    bot.run(config.bot_beta_token)
     
 
 
