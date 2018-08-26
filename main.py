@@ -11,6 +11,10 @@ import json
 import asyncio
 import mods
 from osu import star_rating
+import pytesseract
+from io import BytesIO
+from PIL import Image
+from googlesearch import search
 
 startup_extensions = ["osu", "weather", "nsfw", "fun", 'voice']
 tuo = TwitterUserOrder('aceasianbot')
@@ -120,7 +124,6 @@ async def on_message(message):
                             a = await r1.json()
                         async with session.get(osu_api+'/get_beatmaps', params = {'k': osu_api_key, 'b' : b_mapa}) as r:
                             js = await r.json()
-                            print(js)
                             em = discord.Embed(description=('**Mapper: **{}   **BPM: **{}\n**AR: **{}   **OD: **{}   **HP: **{}   **Stars:** {}{}'.format(js[0]['creator'],
                                                                                                                                                             js[0]['bpm'], 
                                                                                                                                                             js[0]['diff_approach'],
@@ -193,6 +196,37 @@ async def on_message(message):
                     await bot.send_message(message.channel, embed=em)
     else:
         pass
+    # testing OCR
+    if message.attachments:
+        async  with aiohttp.ClientSession() as session:
+            async with session.get(message.attachments[0]["url"]) as r1:
+                buffer = BytesIO(await r1.read())
+                im = Image.open(buffer)
+                height = im.height
+                width = im.width
+                # im = im.crop((0, 0.072*height, 0.5*width, 0.125*height))
+                im = im.crop((0, 0, width, 0.125*height))
+                im = im.convert('1')
+                text = pytesseract.image_to_string(im).lower().split("\n")
+                print(text)
+                if "played by" in text[3]:
+                    start = text[3].rfind("played by") + 9
+                    finish = text[3].rfind("on")
+                    nick = text[3][start:finish]
+                    nick = nick.replace(",", "_")
+                    nick = nick.replace("—", "-")
+                    beatmap = text[0]
+                    # domains = ["https://osu.ppy.sh/b/", "https://osu.ppy.sh/s/", "https://osu.ppy.sh/beatmapsets/"]
+                    for url in search(beatmap + " osu", stop=20):
+                        if "osu.ppy.sh/b/" in url or "osu.ppy.sh/beatmapsets" in url:
+                            print(url)
+                    # nick = nick.replace("><", "x", 1)
+                    # nick = nick.replace("|<", "k")
+                    # nick = nick.replace("l<", "k")
+                    # nick = nick.replace("'", "")
+                    # print(nick)
+                    # await bot.send_message(message.channel, "\n".join(text))
+    # -----------------------------------------------------------------
     await bot.process_commands(message)
 
 @bot.command()
@@ -256,7 +290,7 @@ if __name__ == "__main__":
         except Exception as e:
             exc = '{}: {}'.format(type(e).__name__, e)
             print('Failed to load extension {}\n{}'.format(extension, exc))
-    bot.loop.create_task(is_live_stream())
+    #bot.loop.create_task(is_live_stream())
     bot.run(config.bot_beta_token)
     
 
