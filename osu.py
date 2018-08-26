@@ -373,7 +373,6 @@ class Osu():
             nick = ' '.join(ctx.message.content.split()[2:])
             if nick == '':
                 nick = ctx.message.author.name
-        print(limit)
         await self.bot.send_typing(ctx.message.channel)
         async with aiohttp.ClientSession() as session:
                 async with session.get('https://osu.ppy.sh/api/get_user_recent', params={'k': config.osu_api_key, 'u': nick, 'limit': limit}) as r:
@@ -432,8 +431,9 @@ class Osu():
         async with aiohttp.ClientSession() as cs:
             async with cs.get('http://osuskills.tk/user/{0}/vs/{1}'.format(player1, player2)) as r:
                 source = await r.text()
-                soup = BeautifulSoup(source, "lxml")
-                s = soup.find_all('output' ,{"class":"skillValue"})
+                soup = BeautifulSoup(source, "html.parser")
+                s = soup.find_all('output' , {"class":"skillValue"})
+                username = soup.find_all('h3', {"class" : "userName"})
                 for e in range(7):
                     skillValue1.append(s[e].text)
                 for i in range(7,14):
@@ -441,8 +441,8 @@ class Osu():
         stats[player1] = dict(zip(skillLabels, skillValue1))
         stats[player2] = dict(zip(skillLabels, skillValue2))
         em = discord.Embed(title='osu!Skills compare', url='http://osuskills.tk/user/{0}/vs/{1}'.format(player1.replace(' ', '%20'), player2.replace(' ', '%20')))
-        em.add_field(name=player1, inline =True, value = '**Stamina:** {} \n**Tenacity:** {} \n**Agility:** {} \n**Accuracy:** {} \n**Precision:** {} \n**Reaction:** {} \n**Memory:** {}'.format(stats[player1]['Stamina'],stats[player1]['Tenacity'],stats[player1]['Agility'],stats[player1]['Accuracy'],stats[player1]['Precision'],stats[player1]['Reaction'],stats[player1]['Memory']))
-        em.add_field(name=player2, inline =True, value = '**Stamina:** {} \n**Tenacity:** {} \n**Agility:** {} \n**Accuracy:** {} \n**Precision:** {} \n**Reaction:** {} \n**Memory:** {}'.format(stats[player2]['Stamina'],stats[player2]['Tenacity'],stats[player2]['Agility'],stats[player2]['Accuracy'],stats[player2]['Precision'],stats[player2]['Reaction'],stats[player2]['Memory']))
+        em.add_field(name="".join(username[0].text.splitlines()), inline =True, value = '**Stamina:** {} \n**Tenacity:** {} \n**Agility:** {} \n**Accuracy:** {} \n**Precision:** {} \n**Reaction:** {} \n**Memory:** {}'.format(stats[player1]['Stamina'],stats[player1]['Tenacity'],stats[player1]['Agility'],stats[player1]['Accuracy'],stats[player1]['Precision'],stats[player1]['Reaction'],stats[player1]['Memory']))
+        em.add_field(name="".join(username[1].text.splitlines()), inline =True, value = '**Stamina:** {} \n**Tenacity:** {} \n**Agility:** {} \n**Accuracy:** {} \n**Precision:** {} \n**Reaction:** {} \n**Memory:** {}'.format(stats[player2]['Stamina'],stats[player2]['Tenacity'],stats[player2]['Agility'],stats[player2]['Accuracy'],stats[player2]['Precision'],stats[player2]['Reaction'],stats[player2]['Memory']))
         em.set_footer(icon_url='http://osuskills.tk/template/images/favicons/android-chrome-192x192.png', text='osu!Skills')
         await self.bot.say(embed=em)
 
@@ -499,6 +499,103 @@ class Osu():
                 em.set_thumbnail(url='https://b.ppy.sh/thumb/' + str(js2[0]['beatmapset_id']) + '.jpg')
                 em.set_footer(text="  {}".format(datetime.datetime.now().strftime('%c')),icon_url="https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png")
         await self.bot.say(embed=em)
+    
+    @commands.group(pass_context=True)
+    async def last1(self,ctx):
+        if ctx.invoked_subcommand is None:
+            await self.bot.send_typing(ctx.message.channel)
+            message = ctx.message.content.lower().split()
+            nick = "".join(message[1:])
+            # https://osu.gatari.pw/api/v1/users/scores/recent?id=1021&l=20&f=0&p=1&mode=0
+            async with aiohttp.ClientSession() as session:
+                async with session.get('https://osu.ppy.sh/api/get_user_recent', params={'k': config.osu_api_key, 'u': nick, 'limit': '1'}) as r:
+                    if r.status == 200:
+                        js = await r.json()
+                        scores = len(js)
+                        if scores>0:
+                            bm = js[0]['beatmap_id']
+                            score = js[0]['score']
+                            combo =  js[0]['maxcombo']
+                            count50 = js[0]['count50']
+                            count100 = js[0]['count100']
+                            count300 = js[0]['count300']
+                            misses = js[0]['countmiss']
+                            rank = js[0]['rank']
+                            m = js[0]['enabled_mods']
+                            accuracy = acc_calc(int(misses),int(count50),int(count100),int(count300))
+                            user_id = js[0]['user_id']
+                            """
+                            print(rank)
+                            print(misses)
+                            print(count300)
+                            print(count100)
+                            print(count50)
+                            print(combo)
+                            print(score)
+                            print(bm)
+                            """
+                        else:
+                            await self.bot.say('No recent scores for `{}`.'.format(nick))
+                            return
+                #http://osu.gatari.pw/api/v1/pp b= c= a= m= x(misses)=
+                async with session.get('http://osu.gatari.pw/api/v1/pp', params={'b':bm, 'm':m, 'c':combo, 'a': accuracy, 'x':misses}) as r:
+                    js = await r.json()
+                async with session.get('https://osu.ppy.sh/api/get_user', params={'k': config.osu_api_key, 'u': nick}) as r:
+                    js1 = await r.json()
+                async with session.get('https://osu.ppy.sh/api/get_beatmaps', params={'k': config.osu_api_key, 'b' : bm}) as s:
+                        if s.status == 200:
+                            if scores>0:
+                                js2 = await s.json() 
+                                title =  js2[0]['artist'] + ' - '+ js2[0]['title']+' ('+js2[0]['version']+')'
+                                em = discord.Embed(description=('[{}](https://osu.ppy.sh/b/{}/) {} **{}**\n  **Score:** {}   **Accuracy:** {}\n  **<:hit300:427941500035268608>**{} **<:hit100:427941500274475039>**{} **<:hit50:427941499846787084>**{} **<:hit0:427941499884535829>**{}\n  **Combo:** {}/{}   **Rank:** {}   **PP:** ~{}'.format(title,bm, star_rating(float(js2[0]['difficultyrating'])),readableMods(int(m)),score, accuracy,count300, count100, count50,misses,combo,js2[0]['max_combo'],rank_emoji(rank), js['pp'][0])))
+                                em.set_author(name=("{} {}pp #{} ({}#{})".format(js1[0]['username'],js1[0]['pp_raw'],js1[0]['pp_rank'], js1[0]['country'],js1[0]['pp_country_rank'])), url='https://osu.ppy.sh/u/{}'.format(user_id), icon_url='https://a.ppy.sh/{}_1.png'.format(user_id))
+                                em.set_thumbnail(url='https://b.ppy.sh/thumb/' + str(js2[0]['beatmapset_id']) + '.jpg')
+                                em.set_footer(text="  osu!",icon_url="https://upload.wikimedia.org/wikipedia/commons/4/41/Osu_new_logo.png")
+                await self.bot.send_message(ctx.message.channel, embed=em)
 
+    
+    @last1.command()
+    async def gatari(self, *, nick):
+        await self.bot.send_typing(ctx.message.channel)
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://osu.gatari.pw/api/v1/users/scores/recent?id={}&l=1&f=0&p=1&mode=0'.format(nick)) as gt:
+                js3 = await gt.json()
+                bm = js3['scores'][0]['beatmap']['beatmap_id']
+                score = js3['scores'][0]['score']
+                pp = js3['scores'][0]['pp']
+                combo = js3['scores'][0]['max_combo']
+                count50 = js3['scores'][0]['count_50']
+                count100 = js3['scores'][0]['count_100']
+                count300 = js3['scores'][0]['count_300']
+                misses = js3['scores'][0]['count_miss']
+                max_combo = js3['scores'][0]['fc']
+                m = js3['scores'][0]['mods']
+            async with session.get('https://osu.ppy.sh/api/get_beatmaps', params={'k': config.osu_api_key, 'b' : bm}) as g:
+                if g.status == 200:
+                    js2 = await g.json()
+                    title =  js2[0]['artist'] + ' - '+ js2[0]['title']+' ('+js2[0]['version']+')'
+                    em = discord.Embed(description=('[{}](https://osu.ppy.sh/b/{}){} **{}**\n  **Score:** {}   **Accuracy:**  {}\n  **<:hit300:427941500035268608>**{} **<:hit100:427941500274475039>**{} **<:hit50:427941499846787084>**{} **<:hit0:427941499884535829>**{}\n   **Combo:** {}**x{}**   **PP:**{}'.format(str(title),
+                                                                                                                                                        bm, 
+                                                                                                                                                        star_rating(float(js2[0]['difficultyrating'])),
+                                                                                                                                                        readableMods(int(m)), 
+                                                                                                                                                        str(score), 
+                                                                                                                                                        acc_calc(int(misses),int(count50),int(count100),int(count300)),
+                                                                                                                                                        str(count300),
+                                                                                                                                                        str(count100),
+                                                                                                                                                        str(count50),
+                                                                                                                                                        str(misses),
+                                                                                                                                                        str(combo),
+                                                                                                                                                        str(max_combo),
+                                                                                                                                                        str(pp)
+                                                                                                                                                            )
+                                                    ), colour=0x87104D
+                                    )
+                    em.set_author(name=("{} {}pp #{}".format(nick, n['stats']['pp'],n['stats']['rank'])), url='https://osu.gatari.pw/u/{}'.format(str(user_id)), icon_url='https://a.gatari.pw/{}'.format(str(user_id)))
+                    em.set_footer(text="osu!gatari", icon_url="https://osu.gatari.pw/favicon-32x32.png")
+                    em.set_thumbnail(url='https://b.ppy.sh/thumb/{}.jpg'.format(js2[0]['beatmapset_id']))
+                    await self.bot.say(embed=em)
+        
+        
+        
 def setup(bot):
     bot.add_cog(Osu(bot))
