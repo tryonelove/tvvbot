@@ -3,7 +3,6 @@ from discord.ext import commands
 import aiohttp
 import random
 import time
-from TwitterSearch import *
 import re
 import config
 import checks
@@ -19,17 +18,7 @@ from cogs.osu import acc_calc, star_rating, readableMods, rank_emoji
 import datetime
 import logging
 
-
 startup_extensions = ["osu", "weather", "nsfw", "fun", 'voice', 'dota']
-tuo = TwitterUserOrder('aceasianbot')
-tuo.set_count(100)
-
-ts = TwitterSearch(
-    consumer_key=config.consumer_key,
-    consumer_secret=config.consumer_secret,
-    access_token=config.access_token,
-    access_token_secret=config.access_token_secret
-)
 
 bot = commands.Bot(command_prefix='!', pm_help = True, owner_id='106833067708051456')
 
@@ -41,7 +30,6 @@ weather_key = config.weather_key
 
 with open('configuration.json', 'r+') as f:
     configuration = json.load(f)
-
 
 
 
@@ -72,6 +60,8 @@ async def load_asian(ctx):
                 print(count)
         f.close()
         print('OK')
+
+
 
 async def process_user(message):
     search_for_user = re.search(r'https?:\/\/(osu)\.(?:gatari|ppy).(?:pw|sh)/(u|users)/(\w.+)', message.content)
@@ -117,6 +107,7 @@ async def process_beatmap(message):
     modsEnum = 0
     mods_str = ''
     if s:
+        s = s.group(0)
         if '+' in message.content:
                 for i in message.content.split()[2:]:
                                 if i == "NF":
@@ -155,20 +146,17 @@ async def process_beatmap(message):
                                 elif i == "AP":
                                     modsEnum += mods.RELAX2	
                                     mods_str += i
-        if '/b/' in s.group(0) or '/beatmapsets/' in s.group(0):
-                    b = s.group(0)
-                    if '/b/' in b:
-                        b_mapa = b.find('/b/')
-                        b_mapa = b[b_mapa+3:]
-                    elif '/beatmapsets/' in b:
-                        b_mapa = b.rfind('/')
-                        b_mapa = b[b_mapa +1:]
+        if '/b/' in s:
+                    if '/b/' in s:
+                        b_mapa = s.find('/b/')
+                        b_mapa = s[b_mapa+3:]
                     #http://osu.gatari.pw/api/v1/pp b= c= a= m= x(misses)=
                     async  with aiohttp.ClientSession() as session:
                         async with session.get('http://osu.gatari.pw/api/v1/pp', params={'b':b_mapa, 'm':modsEnum}) as r1:
                             a = await r1.json()
                         async with session.get(osu_api+'/get_beatmaps', params = {'k': osu_api_key, 'b' : b_mapa}) as r:
                             js = await r.json()
+                            print(js)
                             em = discord.Embed(description=('**Mapper: **{}   **BPM: **{}\n**AR: **{}   **OD: **{}   **HP: **{}   **Stars:** {}{}'.format(js[0]['creator'],
                                                                                                                                                             js[0]['bpm'], 
                                                                                                                                                             js[0]['diff_approach'],
@@ -178,14 +166,16 @@ async def process_beatmap(message):
                                                                                                                                                             star_rating(float(js[0]['difficultyrating'])))), colour = 0xCC5288)
                             if 'pp' in a:                                                                                                          
                                 em.add_field(name='----------------PP: {}--------------------'.format(mods_str),value='**100%:** {}pp **99%:** {}pp **98%:** {}pp **95%:** {}pp'.format(a['pp'][0],a['pp'][1],a['pp'][2],a['pp'][3]))
-                            em.set_author(name=('{} - {} [{}] (Clickable)'.format(js[0]['artist'],js[0]['title'],js[0]['version'])), url=b)
+                            em.set_author(name=('{} - {} [{}] (Clickable)'.format(js[0]['artist'],js[0]['title'],js[0]['version'])), url=s)
                             em.set_thumbnail(url='https://b.ppy.sh/thumb/'+str(js[0]['beatmapset_id'])+'.jpg')
                             await bot.send_message(message.channel, embed=em)
-        elif '/s/' in s.group(0):
-                    s = s.group(0)
+        elif '/s/' in s  or '/beatmapsets/' in s:
                     if '/s/' in s:
                         s_mapa = s.find('/s/')
                         s_mapa = s[s_mapa+3:]
+                    elif '/beatmapsets/' in s:
+                        s_mapa = s.rfind('/')
+                        s_mapa = s[s_mapa +1:]
                     async  with aiohttp.ClientSession() as session:
                         async with session.get(osu_api + '/get_beatmaps', params = {'k': osu_api_key, 's' : s_mapa}) as r:
                             js = await r.json()
@@ -203,21 +193,34 @@ async def process_beatmap(message):
                             await bot.send_message(message.channel, embed=em)
 
 
-
 # --- osu screenshot ---
 async def find_url(message):
     search_for_pic_url = re.search(r'http[s]?://.*.(?:png|jpg|gif|svg|jpeg)', message.content)
     # --- image isn't a link ---
     if message.attachments:
+        msg = await bot.send_message(message.channel, "Found an image, processing...")
         async  with aiohttp.ClientSession() as session:
             async with session.get(message.attachments[0]["url"]) as r1:
-                await bot.send_message(message.channel, embed=await ocr_for_attach(r1))
+                try:
+                    await bot.send_message(message.channel, embed=await ocr_for_attach(r1))
+                except discord.errors.HTTPException as e:
+                    print(str(e)+ "\nURL:"+search_for_pic_url.group(0))
+                finally:
+                    await bot.delete_message(msg)
+
     # --- image is a link ---
     elif search_for_pic_url:
+        msg = await bot.send_message(message.channel, "Found an image, processing...")
         async  with aiohttp.ClientSession() as session:
             async with session.get(search_for_pic_url.group(0)) as r1:
-                await bot.send_message(message.channel, embed=await ocr_for_attach(r1))
+                try:
+                    await bot.send_message(message.channel, embed=await ocr_for_attach(r1))
+                except discord.errors.HTTPException as e:
+                    print(str(e)+ "\nURL:"+search_for_pic_url.group(0))
+                finally:
+                    await bot.delete_message(msg)
 
+                
 #---scanning image---
 async def ocr_for_attach(r1):
     ratio = 0
@@ -227,10 +230,10 @@ async def ocr_for_attach(r1):
     height = im.height
     width = im.width
     im = im.crop((0, 0, width, 0.125*height))
-    im = im.convert('1')
-    text = pytesseract.image_to_string(im).lower()
-    if "played by" in text:
-            start = text.rfind("played by") + 9
+    # im = im.convert('1')
+    text = pytesseract.image_to_string(im)
+    if "Played by" in text:
+            start = text.rfind("Played by") + 9
             finish = text.rfind("on")
             nick = text[start:finish]
             text = text.split("\n")
@@ -244,7 +247,7 @@ async def ocr_for_attach(r1):
             title_by_request = beatmap["artist"] + " — " + beatmap["title"]
             for _index, _map in enumerate(beatmap["beatmaps"]):
                 temp_title =  "{} [{}]".format(title_by_request, _map["version"]) 
-                s = SequenceMatcher(lambda x: x == " ", beatmap_title, temp_title)
+                s = SequenceMatcher(None, beatmap_title, temp_title)
                 if s.ratio() > ratio:
                     ratio = s.ratio()
                     index = _index
@@ -362,14 +365,13 @@ async def is_live_stream():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     for extension in startup_extensions:
         try:
             bot.load_extension("cogs."+extension)
         except Exception as e:
             exc = '{}: {}'.format(type(e).__name__, e)
             print('Failed to load extension {}\n{}'.format(extension, exc))
-    # bot.loop.create_task(is_live_stream()) не работает нихуя
+    bot.loop.create_task(is_live_stream()) #не работает нихуя (а может и работает)
     bot.add_listener(process_user, "on_message")
     bot.add_listener(process_beatmap, "on_message")
     bot.add_listener(find_url, "on_message")
