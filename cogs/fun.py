@@ -65,11 +65,11 @@ class Fun():
             x = 100
         await self.bot.say(random.randint(1, int(x)))
 
-    @commands.command(name="8ball")
+    @commands.command(name="8ball", aliases=["8","8b"])
     async def _8ball(self):
         await self.bot.say(random.choice(config.choice))
 
-    @commands.command(aliases=['asian', 'бурятка'])
+    @commands.command(name="asian",aliases=['бурятка'])
     async def _asian(self):
         """Sends photos of some girls."""
         f = open('asians.txt', 'r')
@@ -203,6 +203,45 @@ class Fun():
                     em.add_field(name=":thumbsup:", value=ud1['list'][0]['thumbs_up'], inline=True)
                     em.add_field(name=":thumbsdown:", value=ud1['list'][0]['thumbs_down'], inline=True)
                     await self.bot.say(embed=em)
+    
+    @commands.command(pass_context=True, name="weather",aliases=['погода'])
+    async def _weather(self,ctx, *, city):
+        emoji = ''
+        descr = ''
+        async with aiohttp.ClientSession() as session:
+            async with session.get('http://api.openweathermap.org/data/2.5/weather',
+                                   params={'q': city, 'APPID': config.weather_key}) as r:
+                js = await r.json()
+                C = round(float(js['main']['temp']) - 273, 2)
+                wind = round(js['wind']['speed'] * 1.6093, 0)
+                if js['weather'][0]['main'] == 'Clear':
+                    emoji = ':mountain: '
+                    descr = 'Clear'
+                elif js['weather'][0]['main'] == 'Clouds':
+                    emoji = ':cloud:'
+                    descr = 'Clouds'
+                elif js['weather'][0]['main'] == 'Rain':
+                    emoji = ':umbrella:'
+                    descr = 'Rain'
+                elif js['weather'][0]['main'] == 'Thunderstorm':
+                    emoji = ':cloud_lightning:'
+                    descr = 'Thunderstorm'
+                elif js['weather'][0]['main'] == 'Fog':
+                    emoji = ':foggy:'
+                    descr = 'Fog'
+                elif js['weather'][0]['main'] == 'Drizzle':
+                    emoji = ':umbrella:'
+                    descr = 'Drizzle'
+                elif js['weather'][0]['main'] == 'Snow':
+                    emoji = ':cloud_snow:'
+                    descr = 'Snow'
+                em = discord.Embed(description=(emoji + descr +
+                                                '\n**Temperature:** ' + str(C) +
+                                                '\n**Humidity:** ' + str(js['main']['humidity']) + '%' +
+                                                '\n**Wind speed:** ' + str(wind) + 'km/h'
+                                                ))
+                em.set_author(name=(city.capitalize() + ', ' + js['sys']['country']))
+                await self.bot.say(embed=em)
 
     @commands.command(pass_context = True, hidden = True)
     @checks.is_owner()
